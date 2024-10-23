@@ -1,0 +1,116 @@
+/*****************************************************************************************************************
+NAME:   3.4 Adventure Works
+PURPOSE: To answer 8 questions about the AdventureWorks 2019 DB
+
+MODIFICATION LOG:
+Ver      Date        Author        Description
+-----   ----------   -----------   -------------------------------------------------------------------------------
+1.0     10/07/2024   IMWANGA       1. Built this script for EC IT440
+
+
+RUNTIME: 
+Xm Xs
+
+NOTES: 
+This is where I talk about what this script is, why I built it, and other stuff...
+ 
+******************************************************************************************************************/
+
+-- Q1: Q1. Business User Question – Marginal Complexity- What is the total sales amount for each salesperson in the Sales.SalesPerson table?
+
+SELECT sp.BusinessEntityID, p.FirstName, p.LastName, SUM(soh.TotalDue) AS TotalSalesAmount
+FROM Sales.SalesPerson sp
+JOIN Sales.SalesOrderHeader soh ON sp.BusinessEntityID = soh.SalesPersonID
+JOIN Person.Person p ON sp.BusinessEntityID = p.BusinessEntityID
+GROUP BY sp.BusinessEntityID, p.FirstName, p.LastName
+ORDER BY TotalSalesAmount DESC;
+
+--Q2. Business User Question – Marginal Complexity- How many unique products are currently available in the Production.Product table?
+
+SELECT COUNT(DISTINCT ProductID) AS UniqueProductCount
+FROM Production.Product;
+
+--Q3 Business User question—Moderate complexity: Which are the three departments with the most employees currently, how many employees are there in each department?
+
+SELECT TOP 3 d.Name AS DepartmentName, COUNT(e.BusinessEntityID) AS EmployeeCount
+FROM HumanResources.EmployeeDepartmentHistory edh
+JOIN HumanResources.Department d ON edh.DepartmentID = d.DepartmentID
+JOIN HumanResources.Employee e ON edh.BusinessEntityID = e.BusinessEntityID
+WHERE edh.EndDate IS NULL
+GROUP BY d.Name
+ORDER BY EmployeeCount DESC;
+
+--Q4 Business User question—Moderate complexity: Which products have had more than 100 sales orders in 2010 and what is their current list price?
+
+SELECT p.Name, COUNT(soh.SalesOrderID) AS OrderCount, p.ListPrice
+FROM Sales.SalesOrderDetail sod
+JOIN Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
+JOIN Production.Product p ON sod.ProductID = p.ProductID
+WHERE YEAR(soh.OrderDate) = 2010
+GROUP BY p.Name, p.ListPrice
+HAVING COUNT(soh.SalesOrderID) > 100
+ORDER BY OrderCount DESC;
+
+--Q5: What was the monthly sales trend of Road Bikes in 2011? Please include the total revenue, number of units sold, and average unit price.
+
+SELECT 
+    MONTH(soh.OrderDate) AS Month,
+    SUM(sod.LineTotal) AS TotalRevenue,
+    COUNT(sod.ProductID) AS UnitsSold,
+    AVG(sod.UnitPrice) AS AverageUnitPrice
+FROM 
+    Sales.SalesOrderDetail sod
+JOIN 
+    Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
+JOIN 
+    Production.Product p ON sod.ProductID = p.ProductID
+JOIN 
+    Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID
+JOIN 
+    Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID
+WHERE 
+    pc.Name = 'Bikes' AND psc.Name = 'Road Bikes' AND YEAR(soh.OrderDate) = 2011
+GROUP BY 
+    MONTH(soh.OrderDate)
+ORDER BY 
+    Month;
+
+--Q6 Business User question—Increased complexity: The company wants to evaluate the impact of its new products launched in the first half of 2013. Which of these products have generated more than $50,000 in revenue and have been sold at least 50 times in that period?
+
+SELECT 
+    p.Name AS ProductName,
+    SUM(sod.LineTotal) AS TotalRevenue,
+    COUNT(sod.ProductID) AS UnitsSold
+FROM 
+    Sales.SalesOrderDetail sod
+JOIN 
+    Sales.SalesOrderHeader soh ON sod.SalesOrderID = soh.SalesOrderID
+JOIN 
+    Production.Product p ON sod.ProductID = p.ProductID
+WHERE 
+    YEAR(p.SellStartDate) = 2013 AND 
+    MONTH(p.SellStartDate) BETWEEN 1 AND 6 AND 
+    YEAR(soh.OrderDate) = 2013 AND 
+    MONTH(soh.OrderDate) BETWEEN 1 AND 6
+GROUP BY 
+    p.Name
+HAVING 
+    SUM(sod.LineTotal) > 50000 AND 
+    COUNT(sod.ProductID) >= 50
+ORDER BY 
+    TotalRevenue DESC;
+
+--Q7. How many tables are there in the AdventureWorks database? Use the INFORMATION_SCHEMA.TABLES view.
+SELECT COUNT(*) AS TableCount
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE';
+
+--Q8. List all the columns in the Production.Product table. Use the INFORMATION_SCHEMA.COLUMNS view.
+
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Product' AND TABLE_SCHEMA = 'Production';
+
+
+
+SELECT GETDATE() AS my_date;
